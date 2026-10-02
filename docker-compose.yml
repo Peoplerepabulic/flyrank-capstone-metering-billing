@@ -1,0 +1,16 @@
+version: "3"
+services:
+  # Optional Postgres for production parity. The app defaults to SQLite ($0);
+  # point DATABASE_URL at this service to run on Postgres instead.
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: metering
+      POSTGRES_PASSWORD: metering
+      POSTGRES_DB: metering
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+volumes:
+  pgdata:

@@ -1,0 +1,26 @@
+# capstone.yaml — reviewer manifest for flyrank-capstone-metering-billing
+
+# One command that boots the whole system (creates venv + installs deps on first run).
+run: bash scripts/run.sh
+
+# Seeds two demo tenants (Free + Pro) with documented API keys.
+seed: ./.venv/bin/python scripts/seed.py
+
+# Optional: 13 tests covering money math, idempotency, quota boundaries, webhooks.
+test: ./.venv/bin/python -m pytest -q
+
+# Where the service listens after `run`.
+base_url: http://localhost:8000
+
+# Endpoints the acceptance probes exercise.
+endpoints:
+  - POST /v1/generate            # billable endpoint (X-Tenant-Key + Idempotency-Key headers)
+  - GET  /v1/usage               # per-tenant usage, limits, cost rollup
+  - GET  /v1/plans               # plan catalog with quotas and prices
+  - POST /v1/billing/checkout    # create a Checkout session (simulated or Stripe test mode)
+  - POST /v1/billing/simulate/complete  # dev-only: confirm a simulated checkout
+  - POST /v1/webhooks/billing    # signature-verified provider webhooks
+  - POST /admin/tenants          # create tenants (returns api_key)
+  - POST /admin/jobs/reconcile   # on-demand reconciliation job
+  - GET  /admin/alerts           # job failure + quota alerts
+  - GET  /health
