@@ -49,22 +49,26 @@ class QuotaCheck:
     ai_tokens_used: int
 
 
-def check_quotas(db: Session, tenant: Tenant, plan: Plan,
+def check_quotas(db: Session, tenant: Tenant, plan: dict,
                  requested_api_calls: int, requested_ai_tokens: int) -> QuotaCheck:
-    """Raise PaymentRequired / QuotaExceeded, or return the current usage."""
+    """Raise PaymentRequired / QuotaExceeded, or return the current usage.
+
+    `plan` is a config.PLANS entry (dict with api_calls_quota / ai_tokens_quota).
+    """
     if tenant.subscription_status in ("past_due", "canceled", "unpaid"):
         raise PaymentRequired(tenant.subscription_status)
 
     totals = period_totals(db, tenant.id)
     used_calls = totals["api_calls"]
     used_tokens = totals["ai_tokens"]
+    plan_id = tenant.plan_id
 
-    if used_calls + requested_api_calls > plan.api_calls_quota:
+    if used_calls + requested_api_calls > plan["api_calls_quota"]:
         raise QuotaExceeded("api_calls", used_calls, requested_api_calls,
-                            plan.api_calls_quota, plan.id)
-    if used_tokens + requested_ai_tokens > plan.ai_tokens_quota:
+                            plan["api_calls_quota"], plan_id)
+    if used_tokens + requested_ai_tokens > plan["ai_tokens_quota"]:
         raise QuotaExceeded("ai_tokens", used_tokens, requested_ai_tokens,
-                            plan.ai_tokens_quota, plan.id)
+                            plan["ai_tokens_quota"], plan_id)
     return QuotaCheck(allowed=True, api_calls_used=used_calls, ai_tokens_used=used_tokens)
 
 
